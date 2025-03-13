@@ -7,6 +7,9 @@ from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.types import Command, interrupt
+from langchain_core.tools import tool
+
 
 class State(TypedDict):
     messages: Annotated[list, add_messages]
@@ -15,8 +18,14 @@ memory = MemorySaver()
 
 graph_builder = StateGraph(State)
 
+@tool
+def human_assistance(query: str) -> str:
+    """human assistance"""
+    human_response = interrupt({"query": query})
+    return human_response["data"]
+
 tool = TavilySearchResults(max_results=2)
-tools = [tool]
+tools = [tool, human_assistance]
 llm = ChatAnthropic(model="claude-3-5-sonnet-20240620")
 llm_with_tools = llm.bind_tools(tools)
 
